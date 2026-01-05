@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudMusic Control</title>
+    <style>
+        /* [Modified Begin] - Add overflow hidden to prevent scrolling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #1a1a1a; /* Dark background */
+            color: #e0e0e0; /* Light text */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh; /* Use min-height instead of height */
+            overflow: hidden; /* Prevent scrolling */
+        }
+        /* [Modified End] */
+
+        h1 {
+            color: #ffffff; /* White title */
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-align: center;
+            border-bottom: 2px solid #cc3d52; /* Darker red underline */
+            padding-bottom: 10px;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 800px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            padding: 20px;
+            border-radius: 12px;
+            background-color: #2a2a2a; /* Slightly lighter than body */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .control-btn {
+            padding: 18px 24px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #cc3d52; /* [Modified] - Darker Red button */
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .control-btn:hover {
+            background-color: #a83242; /* [Modified] - Even darker red on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-btn:disabled {
+            background-color: #7a2430; /* [Modified] - Very dark red when disabled */
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .left-panel, .right-panel {
+                width: 100%;
+            }
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>CloudMusic Control</h1>
+    <div class="container">
+        <div class="left-panel">
+            <div class="button-grid">
+                <button class="control-btn" onclick="sendCommand('/play_pause')">播放/暂停</button>
+                <button class="control-btn" onclick="sendCommand('/prev_track')">上一首</button>
+                <button class="control-btn" onclick="sendCommand('/next_track')">下一首</button>
+                <button class="control-btn" onclick="sendCommand('/like')">点喜欢</button>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="button-grid">
+                <button class="control-btn" onclick="sendCommand('/start_music')">启动播放</button>
+                <button class="control-btn" onclick="sendCommand('/stop_music')">停止播放</button>
+                <button class="control-btn" onclick="sendCommand('/volume_up')">音量+</button>
+                <button class="control-btn" onclick="sendCommand('/volume_down')">音量-</button>
+            </div>
+            <!-- [Modified Begin] - Removed volume display -->
+            <!--
+            <div class="volume-display">
+                <div class="volume-label">当前系统音量</div>
+                <div id="volumeValue" class="volume-value">50%</div>
+            </div>
+            -->
+            <!-- [Modified End] -->
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = "http://192.168.0.206:5000"; // [Modified] - Ensure this matches your server's IP
+        const TOKEN = "{{ token }}";
+
+        let isRequestPending = false;
+
+        async function sendCommand(endpoint) {
+            if (isRequestPending) {
+                console.log("Request in progress, ignoring...");
+                return;
+            }
+
+            isRequestPending = true;
+            const button = event.target;
+            button.disabled = true;
+
+            try {
+                const response = await fetch(`${BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log(`Command to ${endpoint} - Status: ${response.status}`);
+
+            } catch (error) {
+                console.error('发送请求时出错:', error);
+            } finally {
+                isRequestPending = false;
+                button.disabled = false;
+            }
+        }
+
+        // [Modified Begin] - Removed volume polling script
+        // async function getVolume() {
+        //     try {
+        //         const response = await fetch(`${BASE_URL}/get_volume`, {
+        //             method: 'GET',
+        //             headers: {
+        //                 'Authorization': `Bearer ${TOKEN}`
+        //             }
+        //         });
+
+        //         if (response.ok) {
+        //             const data = await response.json();
+        //             const volumePercent = Math.round(data.volume * 100);
+        //             document.getElementById('volumeValue').textContent = `${volumePercent}%`;
+        //         } else {
+        //             console.error('获取音量失败:', response.status);
+        //         }
+        //     } catch (error) {
+        //         console.error('获取音量时出错:', error);
+        //     }
+        // }
+
+        // Initial volume check and then poll every 2 seconds
+        // getVolume(); // Get initial volume
+        // setInterval(getVolume, 2000); // Poll every 2 seconds
+        // [Modified End]
+    </script>
+</body>
+</html>
